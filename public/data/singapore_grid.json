@@ -1,0 +1,8 @@
+// Grid infrastructure data
+
+[
+    { "lat": 1.3521, "lng": 103.8198, "name": "Substation A", "type": "Substation", "capacity": 500 },
+    { "lat": 1.3604, "lng": 103.8489, "name": "Solar Panel Cluster", "type": "Solar", "capacity": 200 },
+    { "lat": 1.3000, "lng": 103.8000, "name": "EV Charging Hub", "type": "EV", "capacity": 150 }
+  ]
+  

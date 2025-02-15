@@ -1,15 +1,25 @@
 import * as THREE from "three";
 import Globe from "globe.gl";
+import { fetchGridData } from "./src/data/fetchGridData.js";
+
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoiaXJhbHV4eCIsImEiOiJjbTczZjN0YjgwbHA5Mm5vaG1rNzFtZmxmIn0.DOw1Krvzed9c6UqPfYcCIw"; 
 
 const container = document.getElementById("globe-container");
+
+if (!container) {
+    console.error("❌ Error: #globe-container not found in DOM!");
+} else {
+    console.log("✅ Globe container found!");
+}
 
 const globe = Globe()(container)
   .globeImageUrl(
     `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/0,0,1/1024x512?access_token=${MAPBOX_TOKEN}`
   )
   .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png");
+
+loadGridData();
 
 // Enable camera controls for interactivity
 globe.controls().enabled = true;
@@ -66,11 +76,21 @@ globe.onGlobeHover(({ lat, lng }) => {
   console.log(`Hovered at ${lat}, ${lng}`);
 });
 
-// Sample energy data
-const myEnergyData = [
-  { lat: 37.7749, lng: -122.4194, name: "San Francisco", type: "EV", capacity: 200 },
-  { lat: 51.5074, lng: -0.1278, name: "London", type: "VPP", capacity: 300 },
-];
+// Energy data 
+async function loadGridData() {
+  const gridData = await fetchGridData();
+  if (!gridData || gridData.length === 0) {
+      console.error("❌ No grid data available!");
+      return;
+  }
+
+  console.log("✅ Applying Grid Data to Globe:", gridData);
+
+  globe.pointsData(gridData)
+      .pointColor(d => d.type === "EV" ? "blue" : d.type === "Solar" ? "yellow" : "red")
+      .pointAltitude(d => d.capacity / 100)
+      .pointRadius(0.5);
+}
 
 const myGridConnections = [
   { startLat: 37.7749, startLng: -122.4194, endLat: 51.5074, endLng: -0.1278 },
@@ -99,3 +119,6 @@ globe.arcsData(myGridConnections)
   .arcDashLength(0.5)
   .arcColor(() => "rgba(255, 165, 0, 0.75)")
   .arcDashGap(0.3);
+
+
+  
