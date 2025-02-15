@@ -1,0 +1,12 @@
+# 🚀 Ignore dependencies & build files
+node_modules/
+dist/
+.vscode/
+.DS_Store
+
+# 🌎 Ignore environment variables (Important for Mapbox API key)
+.env
+
+# 🚀 Ignore Vercel & GitHub artifacts
+.vercel/
+.github/
