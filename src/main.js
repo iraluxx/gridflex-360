@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         console.log("✅ Globe successfully created!");
 
-        // ✅ Fetch Grid Data
+        // ✅ Fetch Grid and Solar Data
         const gridData = await fetchGridData();
         console.log("✅ Loaded Grid Data:", gridData);
 
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        // ✅ Render Points as Small Dots
+        // ✅ Render Points (including Solar PV data)
         globe.pointsData(gridData)
             .pointColor(d => {
                 switch (d.type) {
@@ -42,7 +42,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             })
             .pointAltitude(() => 0.005)  // ✅ Keep dots close to the surface
-            .pointRadius(() => 1.2);  // ✅ Make dots clearly visible
+            .pointRadius(d => Math.sqrt(d.capacity) * 0.3) // ✅ Scale radius by capacity
+
+            .onPointClick(d => {
+                alert(`⚡ Clicked on ${d.name}, Type: ${d.type}, Capacity: ${d.capacity} MW`);
+                console.log("✅ Clicked Data Point:", d);
+            });
 
         console.log("✅ Points Added to Globe!");
 
@@ -50,3 +55,4 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("❌ Error initializing the globe:", error);
     }
 });
+
