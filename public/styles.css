@@ -1,7 +1,7 @@
 /* Ensure the body takes up full screen */
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;
     display: flex;
     overflow: hidden;
     background-color: black;
