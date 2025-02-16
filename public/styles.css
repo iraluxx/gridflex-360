@@ -1,0 +1,77 @@
+/* Ensure the body takes up full screen */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    overflow: hidden;
+    background-color: black;
+}
+
+/* Sidebar Styles */
+#sidebar {
+    width: 250px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+/* Ensure the Globe Container is Visible */
+#globe-container {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: transparent;
+    overflow: hidden;
+    z-index: 1;
+}
+/* Ensure Canvas is Clickable */
+canvas {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+}
+
+/* Legend Dots */
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.blue { background: blue; }
+.yellow { background: yellow; }
+.red { background: red; }
+
+canvas {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+}
