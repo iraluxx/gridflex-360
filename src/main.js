@@ -1,58 +1,127 @@
-import * as THREE from "three";
-import Globe from "globe.gl";
-import { fetchGridData } from "./data/fetchGridData.js";
+import { Deck } from "@deck.gl/core";
+import { GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { HeatmapLayer } from "@deck.gl/aggregation-layers";
+import { TileLayer } from "@deck.gl/geo-layers";
 
-const MAPBOX_TOKEN = "pk.eyJ1IjoiaXJhbHV4eCIsImEiOiJjbTczZjN0YjgwbHA5Mm5vaG1rNzFtZmxmIn0.DOw1Krvzed9c6UqPfYcCIw"; 
+const tileLayer = new TileLayer({
+    id: "tile-layer",
+    data: "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    minZoom: 0,
+    maxZoom: 19,
+    tileSize: 256
+});
+
+
+// ✅ Function to Fetch a GeoJSON File
+async function fetchGeoJson(url) {
+    try {
+        console.log(`🔄 Fetching GeoJSON from: ${url}...`);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to load GeoJSON: ${response.statusText}`);
+        const data = await response.json();
+        console.log(`✅ GeoJSON Loaded Successfully from: ${url}`, data);
+        return data;
+    } catch (error) {
+        console.error(`❌ Error Fetching GeoJSON from ${url}:`, error);
+        return null;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("✅ DOM fully loaded!");
 
-    const container = document.getElementById("globe-container");
+    // ✅ Fetch both files separately
+    const boundaryData = await fetchGeoJson("/data/singapore_boundaries.geojson");
+    const energyData = await fetchGeoJson("/data/singapore_energy_data.geojson");
 
-    if (!container) {
-        console.error("❌ Error: #globe-container not found in DOM!");
+    if (!boundaryData || !energyData) {
+        console.error("❌ No valid boundary or energy data.");
         return;
     }
 
-    console.log("✅ Globe container found, initializing...");
+    // ✅ Separate Energy Data into Categories
+    const powerStations = energyData.features.filter(f => f.properties.type === "power_station");
+    const substations = energyData.features.filter(f => f.properties.type === "substation");
+    const electricalTowers = energyData.features.filter(f => f.properties.type === "electrical_tower");
+    const gasStations = energyData.features.filter(f => f.properties.type === "gas_station");
 
-    try {
-        const globe = Globe()(container)
-            .globeImageUrl("/assets/earth-blue-marble.jpg") // ✅ Ensure correct path
-            .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png");
+    console.log("✅ Power Stations:", powerStations);
+    console.log("✅ Substations:", substations);
+    console.log("✅ Electrical Towers:", electricalTowers);
+    console.log("✅ Gas Stations:", gasStations);
 
-        console.log("✅ Globe successfully created!");
+    // ✅ Singapore Boundaries Layer (Force-Render)
+    const boundaryLayer = new GeoJsonLayer({
+        id: "boundary-layer",
+        data: boundaryData,
+        stroked: true,
+        filled: true,
+        extruded: false,  // ✅ Ensure the boundary is flat, not 3D
+        getFillColor: [50, 50, 150, 100], // Blue-gray transparent
+        getLineColor: [255, 255, 255, 200], // White border
+        opacity: 0.6
+    });
+    
 
-        // ✅ Fetch Grid and Solar Data
-        const gridData = await fetchGridData();
-        console.log("✅ Loaded Grid Data:", gridData);
-
-        if (!gridData || gridData.length === 0) {
-            console.error("❌ No grid data available!");
-            return;
+    // ✅ Scatterplot Layer: Power Stations (Force-Render)
+    const powerLayer = new ScatterplotLayer({
+        id: "power-layer",
+        data: powerStations,
+        getPosition: d => d.geometry.coordinates,
+        getRadius: d => Math.sqrt(d.properties.capacity) * 50,
+        getFillColor: [255, 0, 0, 200], // Red for power stations
+        pickable: true,
+        onClick: ({ object }) => {
+            alert(`⚡ Power Station: ${object.properties.name}, Capacity: ${object.properties.capacity} MW`);
         }
+    });
 
-        // ✅ Render Points (including Solar PV data)
-        globe.pointsData(gridData)
-            .pointColor(d => {
-                switch (d.type) {
-                    case "EV": return "rgb(30, 144, 255)"; // ✅ DodgerBlue
-                    case "Solar": return "rgb(255, 223, 0)"; // ✅ Bright Yellow
-                    case "VPP": return "rgb(50, 205, 50)"; // ✅ Lime Green
-                    default: return "rgb(255, 69, 0)"; // ✅ Red-Orange
-                }
-            })
-            .pointAltitude(() => 0.005)  // ✅ Keep dots close to the surface
-            .pointRadius(d => Math.sqrt(d.capacity) * 0.3) // ✅ Scale radius by capacity
+    // ✅ Scatterplot Layer: Substations
+    const substationLayer = new ScatterplotLayer({
+        id: "substation-layer",
+        data: substations,
+        getPosition: d => d.geometry.coordinates,
+        getRadius: 200,
+        getFillColor: [0, 0, 255, 200], // Blue for substations
+        pickable: true
+    });
 
-            .onPointClick(d => {
-                alert(`⚡ Clicked on ${d.name}, Type: ${d.type}, Capacity: ${d.capacity} MW`);
-                console.log("✅ Clicked Data Point:", d);
-            });
+    // ✅ Scatterplot Layer: Electrical Towers
+    const towerLayer = new ScatterplotLayer({
+        id: "tower-layer",
+        data: electricalTowers,
+        getPosition: d => d.geometry.coordinates,
+        getRadius: 150,
+        getFillColor: [255, 165, 0, 200], // Orange for electrical towers
+        pickable: true
+    });
 
-        console.log("✅ Points Added to Globe!");
+    // ✅ Heatmap Layer: Energy Density (Force-Render)
+    const heatmapLayer = new HeatmapLayer({
+        id: "heatmap-layer",
+        data: [...powerStations, ...substations],
+        getPosition: d => d.geometry.coordinates,
+        getWeight: d => d.properties.capacity || 1,
+        radiusPixels: 40
+    });
 
-    } catch (error) {
-        console.error("❌ Error initializing the globe:", error);
-    }
+    // ✅ Initialize Deck.gl (Force-Render)
+    const deck = new Deck({
+        canvas: "deck-canvas",
+        initialViewState: {
+            longitude: 103.8198,
+            latitude: 1.3521,
+            zoom: 5,  // ✅ Zoom out a bit to see the whole region
+            minZoom: 3,
+            maxZoom: 15,
+            pitch: 45,  // ✅ Keep a natural viewing angle
+            bearing: 0
+        },
+        controller: true,
+        layers: [tileLayer, boundaryLayer, powerLayer, substationLayer, towerLayer, heatmapLayer]
+    });
+    
+
+    console.log("✅ Deck.gl initialized!");
+    console.log("✅ Rendering Layers:", deck.props.layers);
 });
-

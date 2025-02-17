@@ -1,26 +1,26 @@
 export async function fetchGridData() {
     try {
-        // Load the existing grid data
+        console.log("🔄 Fetching grid data...");
+
         const response = await fetch("/data/singapore_grid.json");
-        if (!response.ok) throw new Error("Failed to load grid data");
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
 
         const gridData = await response.json();
 
-        // Manually add Solar PV Data
-        const solarData = [
-            { name: "Private Sector", lat: 1.3, lng: 103.8, type: "Solar", capacity: 235.5 },
-            { name: "Public Service Agencies", lat: 1.3644, lng: 103.9915, type: "Solar", capacity: 25.4 },
-            { name: "Residential", lat: 1.3521, lng: 103.8198, type: "Solar", capacity: 15.7 },
-            { name: "Town Councils & Grassroots Units", lat: 1.3451, lng: 103.9532, type: "Solar", capacity: 167.0 }
-        ];
+        console.log("✅ Grid data loaded:", gridData);
 
-        // Merge solar data with grid data
-        const fullData = [...gridData, ...solarData];
+        if (!gridData || gridData.length === 0) {
+            console.error("❌ Grid data is empty!");
+            return { fullData: [], totalCapacity: 0 };
+        }
 
-        console.log("✅ Grid and Solar Data Loaded:", fullData);
-        return fullData;
+        // Compute total energy storage capacity
+        const totalCapacity = gridData.reduce((sum, d) => sum + d.capacity, 0);
+        console.log("⚡ Total Energy Capacity:", totalCapacity, "MW");
+
+        return { fullData: gridData, totalCapacity };
     } catch (error) {
         console.error("❌ Error fetching grid data:", error);
-        return [];
+        return { fullData: [], totalCapacity: 0 };
     }
 }
